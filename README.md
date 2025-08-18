@@ -13,33 +13,21 @@ Tray indicator for Corsair HS80 Headset
 
 ```bash
 git clone https://github.com/robertoszek/hs80tray.git
-```
-
-```bash
 cd hs80tray
-```
-
-```bash
 cmake .
-```
-
-```bash
 make
-```
-
-```bash
 sudo make install
 ```
 
 ## Running
 ```bash
-hs80tray
+$ hs80tray
 ```
 
 ## Usage
 
 ```bash
-hs80tray -h
+$ hs80tray -h
 Usage: hs80tray [options]
 Show a battery indicator on the system tray for Corsair HS80 headsetOptions:
   -h, --help      Show this help message
