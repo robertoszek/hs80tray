@@ -19,6 +19,11 @@ make
 sudo make install
 ```
 
+Create the file `/etc/udev/rules.d/corsair-hid.rules` with the following contents:
+```
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="1b1c", ATTRS{idProduct}=="0a73", MODE="0666"
+```
+
 ## Running
 ```bash
 $ hs80tray
