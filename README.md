@@ -8,6 +8,7 @@ Tray indicator for Corsair HS80 Headset
 
 - Battery level
 - Charging state
+- Auto switching default output when connecting headset
 
 ## Installing
 
@@ -24,7 +25,13 @@ Create the file `/etc/udev/rules.d/corsair-hid.rules` with the following content
 SUBSYSTEM=="hidraw", ATTRS{idVendor}=="1b1c", ATTRS{idProduct}=="0a73", MODE="0666"
 ```
 
+And reload the rules (or reboot your system):
+```bash
+$ sudo udevadm control --reload-rules && sudo udevadm trigger 
+```
+
 ## Running
+
 ```bash
 $ hs80tray
 ```
@@ -34,9 +41,22 @@ $ hs80tray
 ```bash
 $ hs80tray -h
 Usage: hs80tray [options]
-Show a battery indicator on the system tray for Corsair HS80 headsetOptions:
+Show a battery indicator on the system tray for Corsair HS80 headset
+Options:
   -h, --help      Show this help message
+  -d, --device    Switch to sink name when connecting headset
   -v, --verbose   Enable verbose debug output
+```
+
+### Switching default output
+
+When connecting the headset, it will switch to the provided sink name by using `--device`. For example:
+```bash
+$ hs80tray -d alsa_output.usb-Corsair_CORSAIR_HS80_RGB_Wireless_Gaming_Receiver_1a23456789012345-00.pro-output-0
+```
+You can get the name of your sinks by running:
+```bash
+$ pactl list short sinks
 ```
 
 #### WIP

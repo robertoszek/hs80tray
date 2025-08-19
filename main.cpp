@@ -8,6 +8,7 @@
 #include <QIcon>
 #include <hidapi/hidapi.h>
 #include <iostream>
+#include <sstream>
 
 #define VENDOR_ID  0x1B1C
 #define PRODUCT_ID 0x0A73
@@ -17,9 +18,65 @@
 #define MAX_STR 255
 
 static bool g_verbose = false;
+static bool g_switch_sink = false;
 static int last_charging = false;
 static double last_percentage = -1;
 static const int PASSIVE_TIMEOUT_MS = 30 * 60 * 1000;
+static QString sink;
+
+struct Sink {
+    std::string id;
+    std::string name;
+};
+
+std::vector<Sink> get_sinks() {
+    //TODO: use pipewire API instead of running cmds
+    std::vector<Sink> sinks;
+    std::array<char, 256> buffer;
+    FILE* pipe = popen("pactl list short sinks", "r");
+    if (!pipe) return sinks;
+
+    while (fgets(buffer.data(), buffer.size(), pipe)) {
+        std::string line(buffer.data());
+        std::istringstream iss(line);
+        Sink s;
+        iss >> s.id >> s.name; // first two columns: ID and NAME
+        sinks.push_back(s);
+    }
+    pclose(pipe);
+    return sinks;
+}
+
+std::string find_sink_id(const std::string &target_name) {
+    auto sinks = get_sinks();
+    for (const auto &s : sinks) {
+        if (s.name == target_name) {
+            return s.id;
+        }
+    }
+    return "";
+}
+
+int switch_pipewire_sink(const QString sink_name){
+    std::string sink_str = sink_name.toStdString();
+    std::string sink_id = find_sink_id(sink_str);
+
+    if (sink_id.empty()) {
+        std::cerr << "Sink not found: " << sink_str << "\n";
+        return 1;
+    }
+    //TODO: use pipewire API instead of running cmds
+    std::string cmd = "wpctl set-default " + sink_id;
+    int ret = std::system(cmd.c_str());
+    if (ret == 0) {
+        std::cout << "Switched default sink to: " << sink_str
+                  << " (ID=" << sink_id << ")\n";
+    } else {
+        std::cerr << "Failed to switch sink\n";
+    }
+
+    return ret;
+}
 
 // --- Worker to run in its own thread so blocking operations do not affect the main UI thread ---
 class HIDWorker : public QObject {
@@ -41,6 +98,7 @@ signals:
 public slots:
     void startPolling() {
         hid_init();
+        bool connected = false;
         handle = nullptr;
         while (!handle && !QThread::currentThread()->isInterruptionRequested()) {
             handle = hid_open(VENDOR_ID, PRODUCT_ID, nullptr);
@@ -85,20 +143,30 @@ public slots:
                 double percentage;
                 bool charging;
                 switch (buf[3]) {
-                case BATTERY_LEVEL_EVENT:
-                    // only show tray icon if we have battery info
-                    emit trayActive();
-                    percentage = (buf[5] | (buf[6] << 8)) / 10;
-                    last_percentage = percentage;
-                    if(g_verbose) qDebug() << "Battery:" << percentage << "%";
-                    break;
-                case CHARGING_EVENT:
-                    charging = (buf[5] == 1);
-                    last_charging = charging;
-                    if(g_verbose) qDebug() << "Charging: " << (charging ? "true" : "false");
-                    break;
-                default:
-                    break;
+                    case BATTERY_LEVEL_EVENT:
+                    {
+                        if (!connected){
+                            connected = true;
+                            if(g_switch_sink) switch_pipewire_sink(sink);
+                        }
+                        // only show tray icon if we have battery info
+                        emit trayActive();
+                        percentage = (buf[5] | (buf[6] << 8)) / 10;
+                        last_percentage = percentage;
+                        if(g_verbose) qDebug() << "Battery:" << percentage << "%";
+                    } break;
+                    case CHARGING_EVENT:
+                    {
+                        if (!connected){
+                            connected = true;
+                            if(g_switch_sink) switch_pipewire_sink(sink);
+                        }
+                        charging = (buf[5] == 1);
+                        last_charging = charging;
+                        if(g_verbose) qDebug() << "Charging: " << (charging ? "true" : "false");
+                    } break;
+                    default:
+                    {} break;
                 }
                 emit batteryUpdated(last_percentage, last_charging);
             }
@@ -107,6 +175,7 @@ public slots:
                 // No message received after timeout, assuming headset disconnected
                 if (lastMessageTimer.hasExpired(PASSIVE_TIMEOUT_MS)) {
                     emit trayPassive();
+                    connected = false;
                 }
             }
         }
@@ -157,20 +226,26 @@ QIcon getBatteryIcon(double percentage, bool charging) {
     return QIcon(pixmap);
 }
 
+static std::string device;
 int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
     QStringList args = app.arguments();
     for (int i = 1; i < args.size(); ++i) {
         if (args[i] == "-h" || args[i] == "--help") {
             std::cout << "Usage: " << args[0].toStdString() << " [options]\n";
-            std::cout << "Show a battery indicator on the system tray for Corsair HS80 headset";
+            std::cout << "Show a battery indicator on the system tray for Corsair HS80 headset\n";
             std::cout << "Options:\n";
             std::cout << "  -h, --help      Show this help message\n";
+            std::cout << "  -d, --device    Switch to sink name when connecting headset\n";
             std::cout << "  -v, --verbose   Enable verbose debug output\n";
             return 0;
         }
         if (args[i] == "-v" || args[i] == "--verbose") {
             g_verbose = true;
+        }
+        if (args[i] == "-d" || args[i] == "--device") {
+            sink = args[i+1];
+            g_switch_sink = true;
         }
     }
     QLoggingCategory::defaultCategory()->setEnabled(QtDebugMsg, true);
