@@ -4,6 +4,13 @@ Tray indicator for Corsair HS80 Headset
 
 ![Tray indicator](tray.png)
 
+You can find this project at: 
+
+|                          GitHub                           |                          Gitlab                           |                                Gitea                                 |
+|:---------------------------------------------------------:|:---------------------------------------------------------:|:--------------------------------------------------------------------:|
+| [hs80tray](https://github.com/robertoszek/hs80tray) | [hs80tray](https://gitlab.com/robertoszek/hs80tray) | [hs80tray](https://gitea.robertoszek.xyz/robertoszek/hs80tray) |
+
+
 ## Features
 
 - Battery level
@@ -11,7 +18,14 @@ Tray indicator for Corsair HS80 Headset
 - Auto switching default output when connecting headset
 
 ## Installing
+### Using a package manager
+Here's a list of the available packages:
 
+| Package type   | Link                                                    | Maintainer                                    |
+|:--------------:|:-------------------------------------------------------:|:---------------------------------------------:|
+| AUR (Arch)     | https://aur.archlinux.org/packages/hs80tray             | [robertoszek](https://github.com/robertoszek) |
+
+### Building from source
 ```bash
 git clone https://github.com/robertoszek/hs80tray.git
 cd hs80tray
@@ -58,6 +72,7 @@ You can get the name of your sinks by running:
 ```bash
 $ pactl list short sinks
 ```
+
 
 #### WIP
 Only gets the messages the headset reports back, so it takes a while to display the battery percentage for the first time.

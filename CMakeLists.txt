@@ -9,7 +9,8 @@ pkg_check_modules(HIDAPI REQUIRED hidapi-hidraw)
 set(CMAKE_AUTOMOC ON)
 add_executable(hs80tray main.cpp
     README.md
-    tray.png)
+    tray.png
+    99-corsair-hid.rules)
 set_target_properties(hs80tray PROPERTIES
     BUILD_WITH_INSTALL_RPATH TRUE
     INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib"
