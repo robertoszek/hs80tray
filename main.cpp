@@ -66,7 +66,7 @@ int switch_pipewire_sink(const QString sink_name){
         return 1;
     }
     //TODO: use pipewire API instead of running cmds
-    std::string cmd = "wpctl set-default " + sink_id;
+    std::string cmd = "pactl set-default-sink " + sink_id;
     int ret = std::system(cmd.c_str());
     if (ret == 0) {
         std::cout << "Switched default sink to: " << sink_str
