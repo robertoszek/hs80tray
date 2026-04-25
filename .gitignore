@@ -72,6 +72,7 @@ CMakeLists.txt.user*
 # --------
 *.dll
 *.exe
+/test_leds
 
 # Directories with generated files
 .moc/

@@ -18,4 +18,10 @@ set_target_properties(hs80tray PROPERTIES
 )
 target_include_directories(hs80tray PRIVATE ${HIDAPI_INCLUDE_DIRS})
 target_link_libraries(hs80tray Qt6::DBus KF6::StatusNotifierItem Qt6::Widgets ${HIDAPI_LIBRARIES})
+
+add_executable(test_leds test_leds.cpp)
+set_target_properties(test_leds PROPERTIES AUTOMOC OFF)
+target_include_directories(test_leds PRIVATE ${HIDAPI_INCLUDE_DIRS})
+target_link_libraries(test_leds ${HIDAPI_LIBRARIES})
+
 install(TARGETS hs80tray DESTINATION bin)
